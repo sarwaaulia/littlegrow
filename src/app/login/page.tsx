@@ -39,12 +39,13 @@ export default function LoginPage() {
 
 			const result = await response.json();
 
-			if (response.ok) {
-				toast.success("Login successfully! Welcome back!");
-				router.refresh();
-				router.push(result.redirectPath);
+			if (!response.ok) {
+				throw new Error(result.message || "Invalid email or password");
 			}
-			
+
+			toast.success("Login successfully! Welcome back!");
+			router.refresh();
+			router.push(result.redirectPath);
 		} catch (error: any) {
 			toast.error(error.message || "An error occurred during login");
 			console.error("detail error", error.message);

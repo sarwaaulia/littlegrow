@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" role="img" aria-label="LittleGrow Logo">
+  <!-- Icon Background -->
+  <g transform="translate(0,0)">
+    <circle cx="32" cy="32" r="28" fill="#6875F5"/>
+    <!-- Baby head -->
+    <circle cx="32" cy="26" r="7" fill="#FFFFFF"/>
+    <!-- Baby body -->
+    <path d="M18 44c0-7.7 6.3-14 14-14s14 6.3 14 14"
+          fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <!-- Leaf / growth -->
+    <path d="M38 20c6 0 10-4 12-8-8 0-12 4-12 8z"
+          fill="#E0E7FF"/>
+  </g>
+
+  <!-- Text -->
+  <text x="76" y="42"
+        font-family="Inter, Poppins, Arial, sans-serif"
+        font-size="28"
+        font-weight="600"
+        fill="#2E3A8C">
+    LittleGrow
+  </text>
+</svg>

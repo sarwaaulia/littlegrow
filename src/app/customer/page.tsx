@@ -20,7 +20,7 @@ export default async function CustomerPage() {
         <h1 className="text-2xl font-bold">Dashboard customer</h1>
         <p className="text-gray-600">Welcome back, {dbUser?.role}!</p>
         
-        {/* Konten dashboard nanti di sini */}
+        {/* main page */}
       </main>
     </div>
   )
