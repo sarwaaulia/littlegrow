@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
+	req: Request,
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		const {id} = await params;
+		const { id } = await params;
 
 		const supabase = await createClient();
 		const {
@@ -34,33 +34,63 @@ export async function DELETE(
 }
 
 export async function PATCH(
-    req: Request,
-    { params }: { params: Promise<{ id: string }> }
+	req: Request,
+	{ params }: { params: Promise<{ id: string }> },
 ) {
-    try {
-        const { id } = await params;
-        const body = await req.json();
+	try {
+		const { id } = await params;
+		const body = await req.json();
 
-        const updatedProduct = await prisma.product.update({
-            where: { id: id },
-            data: {
-                name: body.name,
-                description: body.description,
-                price: parseFloat(body.price),
-                stock: parseInt(body.stock),
-                images: body.images,
-                category: {
-                    connectOrCreate: {
-                        where: { name: body.categoryName },
-                        create: { name: body.categoryName },
-                    },
-                },
-            },
-        });
+		const updatedProduct = await prisma.product.update({
+			where: { id: id },
+			data: {
+				name: body.name,
+				description: body.description,
+				price: parseFloat(body.price),
+				stock: parseInt(body.stock),
+				images: body.images,
+				category: {
+					connectOrCreate: {
+						where: { name: body.categoryName },
+						create: { name: body.categoryName },
+					},
+				},
+			},
+		});
 
-        return NextResponse.json(updatedProduct);
-    } catch (error: any) {
-        console.error("PATCH_ERROR:", error);
-        return NextResponse.json({ message: "Failed update product" }, { status: 500 });
+		return NextResponse.json(updatedProduct);
+	} catch (error: any) {
+		console.error("PATCH_ERROR:", error);
+		return NextResponse.json(
+			{ message: "Failed update product" },
+			{ status: 500 },
+		);
+	}
+}
+
+export async function GET(
+	req: Request,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const { id } = await params;
+
+		const productId = await prisma.product.findUnique({
+			where: { id: id },
+			include: {
+				category: true,
+			},
+		});
+
+		if (!productId) {
+			return NextResponse.json(
+				{ message: `Poruduct not found` },
+				{ status: 404 },
+			);
+		}
+
+		return NextResponse.json(productId, { status: 200 });
+	} catch (error) {
+        return NextResponse.json({message: `Error while get id product`}, {status: 500})
     }
 }

@@ -20,41 +20,45 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const url = request.nextUrl.clone()
+  const path = request.nextUrl.pathname
 
-  // jika belum login dan mencoba akses dashboard
-  if (!user && (request.nextUrl.pathname.startsWith('/home') || request.nextUrl.pathname.startsWith('/admin/dashboard'))) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // halaman yang boleh di akses tanpa login
+  const isAuthPage = path === '/login' || path === '/register'
+  const isPublicPage = path === '/'
+
+  // jika user belum login
+  if (!user) {
+    if (path.startsWith('/admin') && !isAuthPage) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return response
   }
 
-  // jika sudah login tapi mencoba membuka halaman regist/login
-  if(user && (url.pathname === '/login' || url.pathname === '/register')) {
-    const {data: users} = await supabase.from('users').select('role').eq('id', user.id).single()
-
-    const targetPath = users?.role === 'ADMIN' ? '/admin/dashboard' : '/customer'
-    return NextResponse.redirect(new URL(targetPath, request.url))
-  }
-
-  // Role-Based Access Control (RBAC)
+  // jika user sudah login 
   if (user) {
-    // Ambil role dari tabel public.users
-    const { data: users } = await supabase
+    // cek role dari db
+    const { data: dbUser } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    const isAdminPath = request.nextUrl.pathname.startsWith('/admin/dashboard')
-    const isCustomerPath = request.nextUrl.pathname.startsWith('/customer')
+    const role = dbUser?.role
 
-    // Jika customer mencoba masuk ke /admin
-    if (isAdminPath && users?.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/customer', request.url))
+    // jika sudah login tapi ingin akses path login/regist
+    if (isAuthPage) {
+      const target = role === 'ADMIN' ? '/admin/dashboard' : '/'
+      return NextResponse.redirect(new URL(target, request.url))
     }
 
-    // Jika admin mencoba masuk ke dashboard customer
-    if (isCustomerPath && users?.role === 'ADMIN') {
+    // RBAC: Admin mencoba masuk ke home
+    if (path === '/' && role === 'ADMIN') {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    }
+
+    // RBAC jika user ingin akses halaman admin
+    if (path.startsWith('/admin') && role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
@@ -62,5 +66,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*', '/login', '/register'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 }

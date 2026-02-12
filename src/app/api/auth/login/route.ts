@@ -43,7 +43,7 @@ export async function POST(req: Request) {
             return NextResponse.json({
                 message: `Login successfully!`,
                 role: userDb.role,
-                redirectPath: userDb.role === "ADMIN" ? "/admin/dashboard" : "/customer",
+                redirectPath: userDb.role === "ADMIN" ? "/admin/dashboard" : "/",
             });
         }
 

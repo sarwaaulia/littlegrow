@@ -14,7 +14,7 @@ export default function ProductManagement({ initialProducts }: any) {
 	const [selectedCategory, setSelectedCategory] = useState("all");
 	const router = useRouter();
 
-	const categories = ["clothing", "footwear", "accessories", "toys"];
+	const categories = ["Clothing", "Footwear", "Accessories", "Toys"];
 
 	// setup realtime subscription
 	useEffect(() => {
@@ -66,7 +66,7 @@ export default function ProductManagement({ initialProducts }: any) {
 			if (sortBy === "price-high") return b.price - a.price;
 			if (sortBy === "price-low") return a.price - b.price;
 			if (sortBy === "stock-low") return a.stock - b.stock;
-			// default itu yang terakhir kali di tambahkan
+			// default newest
 			return (
 				new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
 			);

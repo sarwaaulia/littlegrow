@@ -15,6 +15,9 @@ export async function POST(req: Request) {
 			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 
 		const body = await req.json();
+		if(!body.name || !body.price || !body.categoryName) {
+			return NextResponse.json({message: `All data are required`}, {status: 500})
+		}
 		const product = await prisma.product.create({
 			data: {
 				name: body.name,
@@ -35,6 +38,7 @@ export async function POST(req: Request) {
 
 		return NextResponse.json(product, { status: 201 });
 	} catch (error) {
+		console.error("PRISMA ERROR:", error);
 		return NextResponse.json(
 			{ message: `Error creating product` },
 			{ status: 500 },

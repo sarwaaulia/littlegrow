@@ -46,6 +46,7 @@ export default function LoginPage() {
 			toast.success("Login successfully! Welcome back!");
 			router.refresh();
 			router.push(result.redirectPath);
+			
 		} catch (error: any) {
 			toast.error(error.message || "An error occurred during login");
 			console.error("detail error", error.message);

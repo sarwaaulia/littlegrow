@@ -43,7 +43,7 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 		}
 	}, [initialData, reset, isOpen]);
 
-	// clear previes URL saat unmount
+	// clear preview URL saat unmount
 	useEffect(() => {
 		return () => preview.forEach((url) => URL.revokeObjectURL(url));
 	}, [preview]);
@@ -54,7 +54,7 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 			const filesArray = Array.from(e.target.files);
 			setSelectedFiles((prev) => [...prev, ...filesArray]);
 
-			// Buat URL preview untuk ditampilkan
+			// buat URL preview untuk ditampilkan
 			const newPreviews = filesArray.map((file) => URL.createObjectURL(file));
 			setPreview((prev) => [...prev, ...newPreviews]);
 		}
@@ -81,7 +81,7 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 				.upload(filePath, file);
 
 			if (error) {
-				console.error("UPLOAD ERROR:", error.message); // CEK INI DI CONSOLE INSPECT
+				console.error("UPLOAD ERROR:", error.message); //debug
 				continue;
 			}
 

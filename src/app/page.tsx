@@ -1,40 +1,68 @@
 import { prisma } from "@/lib/prisma";
-import ProductGrid from "@/components/ProductGrid";
+import ProductGrid from "./components/ProductGrid";
 import Link from "next/link";
 import Image from "next/image";
+import Navbar from "./components/Navbar";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+
+// me render data baru tanpa refresh
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-    // suggest for you dari 4 produk terbaru
-    const latestProducts = await prisma.product.findMany({
+    const supabase = await createClient()
+    const {data: {user}} = await supabase.auth.getUser();
+
+    let dbUser = null;
+    if(user) {
+        dbUser= await prisma.user.findUnique({
+            where: {id: user.id}
+        })
+
+        if(dbUser?.role === "ADMIN") redirect("/admin/dashboard");
+    }
+
+    // suggest for you 4 produk terbaru dari prisma
+    const rawProducts = await prisma.product.findMany({
         include: { category: true },
         orderBy: { created_at: 'desc' },
         take: 4
     });
 
+    const latestProducts = rawProducts.map((product) => ({
+        ...product,
+        price: Number(product.price),
+        created_at: product.created_at.toISOString(),
+        updated_at: product.updated_at.toISOString(),
+    }));
+
     const categories = [
-        { name: 'Clothing', slug: 'clothing', img: '/cat-clothing.jpg' },
-        { name: 'Footwear', slug: 'footwear', img: '/cat-footwear.jpg' },
-        { name: 'Toys', slug: 'toys', img: '/cat-toys.jpg' },
-        { name: 'Accessories', slug: 'accessories', img: '/cat-acc.jpg' },
+        { name: 'Clothing', slug: 'clothing', img: '/clothing.jpg' },
+        { name: 'Footwear', slug: 'footwear', img: '/footwear.jpg' },
+        { name: 'Toys', slug: 'toys', img: '/toys.jpg' },
+        { name: 'Accessories', slug: 'accessories', img: '/accessories.jpg' },
     ];
 
     return (
-        <main className="bg-[#F6F7FB] min-h-screen">
+        <main className="bg-[#F6F7FB] pt-2 md:pt-0 min-h-screen">
+            <Navbar user={dbUser}/>
 
             {/* jumbotron section */}
-            <section className="bg-white border-b border-[#E5E7EB] overflow-hidden">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center">
-                    {/* Left: Baby Image */}
-                    <div className="w-full md:w-1/2 h-[400px] md:h-[600px] relative">
+            <section className="bg-white border-b border-[#E5E7EB]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center min-h-[500px] md:min-h-[600px]">
+
+                    {/* left baby image */}
+                    <div className="w-full md:w-1/2 h-[350px] md:h-[600px] relative">
                         <Image 
-                            src="https://images.unsplash.com/photo-1522771917583-6cba89217e68" 
-                            alt="Baby" fill className="object-cover" 
+                            src="/baby-image.jpg" 
+                            fill
+                            priority
+                            alt="Baby" className="object-cover" 
                         />
                     </div>
 
                     {/* cta */}
-                    <div className="w-full md:w-1/2 p-10 md:p-20 flex flex-col items-start gap-6">
-                        <span className="text-[#6875F5] font-black uppercase tracking-tighter text-sm">New Collection 2024</span>
+                    <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col items-start gap-6">
                         <h1 className="text-4xl md:text-6xl font-black text-[#1F2937] leading-tight">
                             Everything Your Little One Needs.
                         </h1>
@@ -59,7 +87,7 @@ export default async function HomePage() {
                         </div>
                         <Link href="/products" className="text-[#6875F5] font-bold border-b-2 border-[#6875F5] hover:text-[#5A67D8]">View All</Link>
                     </div>
-                    <ProductGrid products={latestProducts} />
+                    <ProductGrid products={latestProducts}/>
                 </div>
 
                 {/* category card section */}

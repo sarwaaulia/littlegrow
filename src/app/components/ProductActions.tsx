@@ -78,7 +78,7 @@ export default function ProductActions({ product }: any) {
       {/* modal untuk edit product */}
       <ProductModal 
         isOpen={isEditOpen} 
-        onClose={() => setIsEditOpen(false)} 
+        onClose={() => setIsEditOpen(false)}
         initialData={product} 
       />
     </div>
