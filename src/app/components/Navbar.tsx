@@ -8,6 +8,7 @@ import { ShoppingCart, Search, LogOut, LayoutDashboard, User } from "lucide-reac
 import { useCartStore } from "@/store/useCartStore"; // set up zustand
 
 export default function Navbar({ user }: { user: any }) {
+    const [search, setsearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     
@@ -33,7 +34,7 @@ export default function Navbar({ user }: { user: any }) {
         <nav className="bg-white border-b border-[#E5E7EB] px-4 md:px-8 py-4 flex justify-between items-center sticky top-0 z-50">
             
             {/* logo brand */}
-            <Link href="" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-2 group">
                 {/* <div className="w-10 h-10 bg-[#6875F5] rounded-xl flex items-center justify-center text-white font-bold text-xl transition-transform group-hover:rotate-12">
                     L
                 </div> */}
@@ -41,16 +42,6 @@ export default function Navbar({ user }: { user: any }) {
                     Little<span className="text-[#6875F5]">Grow</span>
                 </span>
             </Link>
-
-            {/* search bar view */}
-            <div className="hidden flex-1 md:block max-w-md mx-10 relative">
-                <input
-                    type="text"
-                    placeholder="Search baby essentials..."
-                    className="w-full bg-[#F6F7FB] border-none rounded-full px-5 py-2.5 text-sm text-[#1F2937] focus:ring-2 focus:ring-[#6875F5] outline-none transition-all"
-                />
-                <Search className="absolute right-4 top-2.5 text-[#6B7280] w-5 h-5" />
-            </div>
 
             {/* right side button actions */}
             <div className="flex items-center gap-3 md:gap-6">

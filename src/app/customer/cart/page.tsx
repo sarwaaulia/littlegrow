@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
 import toast from "react-hot-toast";
+import { supabaseClient } from "@/utils/supabase/client";
+import Script from "next/script";
+
 export default function CartPage() {
 	const { items, removeItem, updateQty, clearCart } = useCartStore();
 
@@ -14,9 +17,58 @@ export default function CartPage() {
 		0,
 	);
 
+	// Di dalam CartPage.tsx
 	const handleCheckout = async () => {
-		// logic Midtrans
-		toast.loading("Processing to checkout...");
+		if (typeof window !== "undefined" && !(window as any).snap) {
+			toast.error('loading...');
+			return;
+		}
+
+		const {
+			data: { user },
+			error: authError,
+		} = await supabaseClient.auth.getUser();
+
+		if (authError || !user) {
+			return toast.error(`You must be logged in to checkout the products`);
+		}
+
+		if (items.length === 0) return toast.error("cart is empty!");
+
+		try {
+			// ambil token midtrans
+			const res = await fetch("/api/checkout", {
+				method: "POST",
+				body: JSON.stringify({
+					amount: subtotal,
+					items: items, //item dari zustand
+					userId: user.id,
+				}),
+			});
+
+			const { token, orderId } = await res.json();
+
+			// pop up midtrans
+			(window as any).snap.pay(token, {
+				onSuccess: async function (result: any) {
+					toast.success("Payment successfuly!");
+
+					// update stok dan status order
+					await fetch("/api/orders/complete", {
+						method: "POST",
+						body: JSON.stringify({ orderId: orderId }),
+					});
+
+					clearCart();
+					// router.push('/success'); // redirect
+				},
+				onPending: () => toast.loading("Payment pending..."),
+				onError: () => toast.error("Payment failed!"),
+			});
+		} catch (error) {
+			toast.error("Checkout failed. Please try again.");
+			console.error("Checkout error:", error);
+		}
 	};
 
 	if (items.length === 0) {
@@ -57,7 +109,6 @@ export default function CartPage() {
 				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
 					{/* List Items */}
 					<div className="lg:col-span-2 space-y-4">
 						{items.map((item) => (
@@ -84,9 +135,7 @@ export default function CartPage() {
 									<div className="flex items-center gap-4 mt-3">
 										<div className="flex items-center border border-[#E5E7EB] rounded-lg">
 											<button
-												onClick={() =>
-													updateQty(item.id, "minus")
-												}
+												onClick={() => updateQty(item.id, "minus")}
 												className="p-1 hover:bg-[#F6F7FB]"
 											>
 												<Minus className="w-4 h-4" />
@@ -144,6 +193,11 @@ export default function CartPage() {
 					</div>
 				</div>
 			</div>
+			<Script
+				src="https://app.sandbox.midtrans.com/snap/snap.js"
+				data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+				strategy="afterInteractive"
+			/>
 		</div>
 	);
 }

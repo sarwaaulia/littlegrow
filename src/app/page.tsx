@@ -48,7 +48,7 @@ export default async function HomePage() {
             <Navbar user={dbUser}/>
 
             {/* jumbotron section */}
-            <section className="bg-white border-b border-[#E5E7EB]">
+            <section className="bg-white border-b pborder-[#E5E7EB]">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center min-h-[500px] md:min-h-[600px]">
 
                     {/* left baby image */}
