@@ -1,90 +1,100 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
-// tipe data di cart
+// data type in cart
 interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-  stock: number;
-  categoryName?: string;
+	id: string;
+	name: string;
+	price: number;
+	image: string;
+	quantity: number;
+	stock: number;
+	categoryName?: string;
+	userId: string;
 }
 
-// tipe data untuk state
+// data type for state
 interface CartState {
-  items: CartItem[];
-  addItem: (product: CartItem) => void;
-  removeItem: (productId: string) => void;
-  updateQty: (productId: string, action: 'plus' | 'minus') => void;
-  clearCart: () => void;
+	items: CartItem[];
+	addItem: (product: CartItem, userId: string) => void;
+	removeItem: (productId: string, userId: string) => void;
+	updateQty: (
+		productId: string,
+		action: "plus" | "minus",
+		userId: string,
+	) => void;
+	clearCart: (userId: string) => void;
 }
 
-// middleware persist agar data di cart tidak hilang/agar sinkron
+// middleware persist for sync data so that data is not lost
 export const useCartStore = create<CartState>()(
-  persist(
-    // set untuk mengubah nilai state, get untuk mengambil nilai state
-    (set, get) => ({
-      items: [],
+	persist(
+		// set to change the state value, get to get the state value
+		(set, get) => ({
+			items: [],
+			// adding new product to cart
+			addItem: (product, userId) => {
+				// if the product is new added
+				const currentItems = get().items;
 
-      // tambah barang di cart
-      addItem: (product) => {
+				// if items is in cart, add the amount
+				const existingItem = currentItems.find(
+					(item) => item.id === product.id && item.userId === userId,
+				);
 
-        // barang baru, jika belum ada di cart maka tambahkan
-        const currentItems = get().items;
+				if (existingItem) {
+					// if the item is already available, increase the quantity and check the stock.
+					if (existingItem.quantity < product.stock) {
+						set({
+							items: currentItems.map((item) =>
+								item.id === product.id && item.userId === userId
+									? { ...item, quantity: item.quantity + 1 }
+									: item,
+							),
+						});
+					}
+				} else {
+					// if a new item is added to the cart then count from 1
+					set({
+						items: [...currentItems, { ...product, quantity: 1, userId }],
+					});
+				}
+			},
 
-        // barang yang sudah ada di cart maka tambahkan jumlahnya
-        const existingItem = currentItems.find((item) => item.id === product.id);
+			// function for remove one product
+			removeItem: (productId, userId) => {
+				set({
+					items: get().items.filter(
+						(item) => !(item.id === productId && item.userId === userId),
+					),
+				});
+			},
 
-        if (existingItem) {
-          // jika barang sudah ada, tambah kuantitasnya dan cek stock nya
-          if (existingItem.quantity < product.stock) {
-            set({
-              items: currentItems.map((item) =>
-                item.id === product.id
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item
-              ),
-            });
-          }
-        } else {
-          // apabila barang baru di tambahkan ke cart maka hitung dari 1
-          set({ items: [...currentItems, { ...product, quantity: 1 }] });
-        }
-      },
+			// function update quantity, dec/inc
+			updateQty: (productId, action, userId) => {
+				set({
+					items: get().items.map((item) => {
+						if (item.id === productId && item.userId === userId) {
+							const newQty =
+								action === "plus" ? item.quantity + 1 : item.quantity - 1;
+							if (newQty > 0 && newQty <= item.stock) {
+								return { ...item, quantity: newQty };
+							}
+						}
+						return item;
+					}),
+				});
+			},
 
-      // function untuk menghapus satu produk
-      removeItem: (productId) => {
-        set({
-          items: get().items.filter((item) => item.id !== productId),
-        });
-      },
-
-      // Fungsi update qty (tambah/kurang) langsung dari keranjang
-      updateQty: (productId, action) => {
-        const currentItems = get().items;
-        set({
-          items: currentItems.map((item) => {
-            if (item.id === productId) {
-              const newQty = action === 'plus' ? item.quantity + 1 : item.quantity - 1;
-
-              // validasi jika ingin update pembelian maka tidak boleh lebih dari stok dan kurang dari 1
-              if (newQty > 0 && newQty <= item.stock) {
-                return { ...item, quantity: newQty };
-              }
-            }
-            return item;
-          }),
-        });
-      },
-
-      // bersihkan cart jika sudah checkout
-      clearCart: () => set({ items: [] }),
-    }),
-    {
-      name: 'littlegrow-cart-storage', // key di LocalStorage
-      storage: createJSONStorage(() => localStorage), // simpan di LocalStorage
-    }
-  )
+			// clear cart
+			clearCart: (userId) => {
+				// Hanya hapus barang milik user ini, sisakan barang milik user lain
+				set({ items: get().items.filter((item) => item.userId !== userId) });
+			},
+		}),
+		{
+			name: "littlegrow-cart-storage",
+			storage: createJSONStorage(() => localStorage),
+		},
+	),
 );

@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "../components/Navbar";
 import { createClient } from "@/utils/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getProductsData() {
 	const supabase = await createClient();
 
@@ -25,7 +28,7 @@ async function getProductsData() {
 		prisma.category.findMany(),
 	]);
 
-	// parsing pricec decimal dan tanggal format
+	// parsing price decimal dan tanggal format
 	const productsInfo = products.map((product) => ({
 		...product,
 		price: Number(product.price),
@@ -45,6 +48,7 @@ export default async function ProductsPage() {
 
 			<div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
 				<ProductGrid
+					key={JSON.stringify(productsInfo.length + (productsInfo[0]?.id || ""))}
 					products={productsInfo}
 					categories={categories}
 				/>

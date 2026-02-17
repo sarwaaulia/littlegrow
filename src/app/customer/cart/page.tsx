@@ -3,24 +3,62 @@
 import { useCartStore } from "@/store/useCartStore";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
+import {
+	Trash2,
+	Plus,
+	Minus,
+	ArrowLeft,
+	ShoppingBag,
+	CheckCircle2,
+	ArrowRight,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { supabaseClient } from "@/utils/supabase/client";
 import Script from "next/script";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import Navbar from "@/app/components/Navbar";
 
 export default function CartPage() {
+	const router = useRouter();
 	const { items, removeItem, updateQty, clearCart } = useCartStore();
 
-	// menghitung total harga
+	const [showInvoice, setShowInvoice] = useState(false);
+	const [lastOrder, setLastOrder] = useState<any>(null);
+	const [currentUser, setCurrentUser] = useState<any>(null);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const getUser = async () => {
+			try {
+				const {
+					data: { user },
+				} = await supabaseClient.auth.getUser();
+				if (user) {
+					setCurrentUser({
+						...user,
+						name: user.user_metadata?.name || user.email?.split("@")[0],
+						role: user.user_metadata?.role || "USER",
+					});
+				}
+			} catch (error) {
+				console.error("Error fetching user:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+		getUser();
+	}, []);
+
+	// calculate total price
 	const subtotal = items.reduce(
 		(acc, item) => acc + item.price * item.quantity,
 		0,
 	);
 
-	// Di dalam CartPage.tsx
 	const handleCheckout = async () => {
 		if (typeof window !== "undefined" && !(window as any).snap) {
-			toast.error('loading...');
+			toast.error("loading...");
 			return;
 		}
 
@@ -36,33 +74,43 @@ export default function CartPage() {
 		if (items.length === 0) return toast.error("cart is empty!");
 
 		try {
-			// ambil token midtrans
+			// get token midtrans
 			const res = await fetch("/api/checkout", {
 				method: "POST",
 				body: JSON.stringify({
 					amount: subtotal,
-					items: items, //item dari zustand
+					items: items, // items from zustand
 					userId: user.id,
 				}),
 			});
 
-			const { token, orderId } = await res.json();
+			const orderData = await res.json();
+
+			const orderSummary = {
+				orderId: orderData.orderId,
+				customerName: user.user_metadata?.name || user.email?.split("@")[0],
+				items: [...items],
+				total: subtotal,
+			};
 
 			// pop up midtrans
-			(window as any).snap.pay(token, {
+			(window as any).snap.pay(orderData.token, {
 				onSuccess: async function (result: any) {
-					toast.success("Payment successfuly!");
+					setLastOrder(orderSummary);
+					setShowInvoice(true);
+					
+					if (currentUser?.id) {
+						clearCart(currentUser.id);
+					}
 
-					// update stok dan status order
 					await fetch("/api/orders/complete", {
 						method: "POST",
-						body: JSON.stringify({ orderId: orderId }),
+						body: JSON.stringify({ orderId: orderData.orderId }),
 					});
 
-					clearCart();
-					// router.push('/success'); // redirect
+					toast.success("Payment Successful!");
 				},
-				onPending: () => toast.loading("Payment pending..."),
+				onPending: () => toast.loading("Waiting for payment..."),
 				onError: () => toast.error("Payment failed!"),
 			});
 		} catch (error) {
@@ -93,110 +141,181 @@ export default function CartPage() {
 		);
 	}
 
-	return (
-		<div className="min-h-screen bg-[#F6F7FB] py-12 px-6">
-			<div className="max-w-5xl mx-auto">
-				<div className="flex items-center gap-4 mb-8">
-					<Link
-						href="/products"
-						className="p-2 bg-white rounded-full hover:bg-gray-100 border border-[#E5E7EB]"
-					>
-						<ArrowLeft className="w-5 h-5 text-[#1F2937]" />
-					</Link>
-					<h1 className="text-3xl font-black text-[#1F2937]">
-						My Cart ({items.length})
-					</h1>
-				</div>
+	if (loading)
+		return (
+			<div className="min-h-screen bg-[#F6F7FB] flex items-center justify-center">
+				Loading...
+			</div>
+		);
 
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-					{/* List Items */}
-					<div className="lg:col-span-2 space-y-4">
-						{items.map((item) => (
-							<div
-								key={item.id}
-								className="bg-white p-4 rounded-xl border border-[#E5E7EB] flex items-center gap-4 shadow-sm"
-							>
-								<div className="relative w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-									<Image
-										src={item.image}
-										alt={item.name}
-										fill
-										className="object-cover"
-										unoptimized
-									/>
+	return (
+		<div className="min-h-screen bg-[#F6F7FB]">
+			<Navbar user={currentUser} />
+
+			<div className="py-12 px-6">
+				{/* invoice modal */}
+				{showInvoice && lastOrder && (
+					<div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+						<div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+							<div className="bg-green-600 p-8 text-center text-white">
+								<CheckCircle2 className="w-16 h-16 mx-auto mb-4" />
+								<h2 className="text-2xl font-black text-white">
+									Payment Success!
+								</h2>
+							</div>
+
+							<div className="p-8">
+								<div className="space-y-4 mb-8 text-slate-900">
+									<div className="flex justify-between text-sm">
+										<span className="text-slate-500 font-bold">Order ID:</span>
+										<span className="font-black">
+											{lastOrder.orderId.slice(0, 8)}
+										</span>
+									</div>
+									<div className="flex justify-between text-sm border-t border-dashed pt-4">
+										<span className="text-slate-900 font-bold text-lg underline decoration-[#6875F5]">
+											Total Paid
+										</span>
+										<span className="font-black text-2xl text-[#6875F5]">
+											Rp{lastOrder.total.toLocaleString()}
+										</span>
+									</div>
 								</div>
 
-								<div className="flex-1">
-									<h3 className="font-bold text-[#1F2937]">{item.name}</h3>
-									<p className="text-[#6875F5] font-black text-sm mt-1">
-										Rp{item.price.toLocaleString("id-ID")}
-									</p>
+								<button
+									onClick={() => {
+										setShowInvoice(false);
+										router.push("/customer/orders");
+									}}
+									className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition-all"
+								>
+									<span>Track Your Order</span>
+									<ArrowRight className="w-5 h-5" />
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 
-									<div className="flex items-center gap-4 mt-3">
-										<div className="flex items-center border border-[#E5E7EB] rounded-lg">
-											<button
-												onClick={() => updateQty(item.id, "minus")}
-												className="p-1 hover:bg-[#F6F7FB]"
-											>
-												<Minus className="w-4 h-4" />
-											</button>
-											<span className="px-4 font-bold text-sm">
-												{item.quantity}
+				<div className="max-w-5xl mx-auto">
+					{items.length === 0 && !showInvoice ? (
+						<div className="bg-white p-10 rounded-3xl shadow-sm flex flex-col items-center text-center">
+							<ShoppingBag className="w-18 h-20 text-[#6875F5] mb-6 opacity-20" />
+							<h2 className="text-2xl font-black text-slate-900">
+								Your cart is empty
+							</h2>
+							<Link
+								href="/products"
+								className="mt-8 bg-[#6875F5] text-white px-8 py-3 rounded-full font-bold"
+							>
+								Start Shopping
+							</Link>
+						</div>
+					) : (
+						<>
+							<div className="flex items-center gap-4 mb-8">
+								<Link
+									href="/products"
+									className="p-2 bg-white rounded-full border border-gray-200"
+								>
+									<ArrowLeft className="w-5 h-5 text-slate-900" />
+								</Link>
+								<h1 className="text-2xl font-black text-slate-900">
+									My Cart{" "}
+									<span className="text-slate-500 ml-3">({items.length})</span>
+								</h1>
+							</div>
+
+							<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+								<div className="lg:col-span-2 space-y-4">
+									{items.map((item) => (
+										<div
+											key={item.id}
+											className="bg-white p-5 rounded-xl border border-gray-100 flex items-center gap-4 shadow-sm"
+										>
+											<div className="relative w-24 h-24 rounded-xl overflow-hidden bg-gray-50 border border-gray-100">
+												<Image
+													src={item.image}
+													alt={item.name}
+													fill
+													className="object-cover"
+													unoptimized
+												/>
+											</div>
+											<div className="flex-1">
+												<h3 className="font-black text-slate-900 text-lg leading-tight">
+													{item.name}
+												</h3>
+												<p className="text-[#6875F5] font-black mt-1">
+													Rp{item.price.toLocaleString("id-ID")}
+												</p>
+												<div className="flex items-center gap-4 mt-4">
+													<div className="flex items-center border-1 border-[#6875F5] rounded-xl outline-none">
+														<button
+															onClick={() => updateQty(item.id, "minus", currentUser.id)}
+															className="p-2 text-slate-900 hover:text-red-500 transition-colors"
+														>
+															<Minus className="w-4 h-4" />
+														</button>
+														<span className="px-4 font-black text-slate-900 border-x-2 border-slate-100">
+															{item.quantity}
+														</span>
+														<button
+															onClick={() => updateQty(item.id, "plus", currentUser.id)}
+															className="p-2 text-slate-900 hover:text-green-500 transition-colors"
+														>
+															<Plus className="w-4 h-4" />
+														</button>
+													</div>
+													<button
+														onClick={() => removeItem(item.id, currentUser.id)}
+														className="text-slate-400 hover:text-red-600 transition-colors"
+													>
+														<Trash2 className="w-5 h-5" />
+													</button>
+												</div>
+											</div>
+										</div>
+									))}
+								</div>
+
+								<div className="lg:col-span-1">
+									<div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm sticky top-24">
+										<h2 className="text-xl font-bold text-slate-900 mb-6 tracking-tight">
+											Receipt Summary
+										</h2>
+										<div className="space-y-3 mb-6">
+											<div className="flex justify-between text-slate-500 font-bold">
+												<span>Subtotal</span>
+												<span>Rp{subtotal.toLocaleString("id-ID")}</span>
+											</div>
+										</div>
+										<div className="flex justify-between py-6 border-t-2 border-slate-50">
+											<span className="text-l font-bold text-slate-900">
+												Total
 											</span>
-											<button
-												onClick={() => updateQty(item.id, "plus")}
-												className="p-1 hover:bg-[#F6F7FB]"
-											>
-												<Plus className="w-4 h-4" />
-											</button>
+											<span className="text-2xl font-black text-[#6875F5]">
+												Rp{subtotal.toLocaleString("id-ID")}
+											</span>
 										</div>
 										<button
-											onClick={() => removeItem(item.id)}
-											className="text-red-400 hover:text-red-600 p-2"
+											onClick={handleCheckout}
+											className="w-full bg-[#6875F5] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#5A67D8] transition-all shadow-lg shadow-[#6875F5]/30 flex items-center justify-center gap-2 group"
 										>
-											<Trash2 className="w-4 h-4" />
+											Checkout
 										</button>
 									</div>
 								</div>
 							</div>
-						))}
-					</div>
-
-					{/* Summary Card */}
-					<div className="lg:col-span-1">
-						<div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm sticky top-24">
-							<h2 className="text-lg font-bold text-[#1F2937] mb-6">
-								Receipt Summary
-							</h2>
-
-							<div className="space-y-3 pb-6 border-b border-[#E5E7EB]">
-								<div className="flex justify-between text-[#6B7280]">
-									<span>Subtotal</span>
-									<span>Rp{subtotal.toLocaleString("id-ID")}</span>
-								</div>
-							</div>
-
-							<div className="flex justify-between py-6">
-								<span className="text-lg font-bold text-[#1F2937]">Total</span>
-								<span className="text-2xl font-black text-[#6875F5]">
-									Rp{subtotal.toLocaleString("id-ID")}
-								</span>
-							</div>
-
-							<button
-								onClick={handleCheckout}
-								className="w-full bg-[#6875F5] text-white py-3 rounded-xl font-bold hover:bg-[#5A67D8] transition-all shadow-lg shadow-blue-100"
-							>
-								Checkout
-							</button>
-						</div>
-					</div>
+						</>
+					)}
 				</div>
 			</div>
+
 			<Script
 				src="https://app.sandbox.midtrans.com/snap/snap.js"
 				data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-				strategy="afterInteractive"
+				strategy="lazyOnload"
 			/>
 		</div>
 	);

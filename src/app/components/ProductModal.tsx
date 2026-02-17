@@ -38,12 +38,12 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 				description: "",
 				categoryName: "",
 			});
-			setPreview([]); //reset preview jika tambah produk baru
+			setPreview([]); //reset preview if add a new product
 			setSelectedFiles([]);
 		}
 	}, [initialData, reset, isOpen]);
 
-	// clear preview URL saat unmount
+	// clear preview URL when unmount
 	useEffect(() => {
 		return () => preview.forEach((url) => URL.revokeObjectURL(url));
 	}, [preview]);
@@ -54,13 +54,13 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 			const filesArray = Array.from(e.target.files);
 			setSelectedFiles((prev) => [...prev, ...filesArray]);
 
-			// buat URL preview untuk ditampilkan
+			// url preview to view
 			const newPreviews = filesArray.map((file) => URL.createObjectURL(file));
 			setPreview((prev) => [...prev, ...newPreviews]);
 		}
 	};
 
-	// hapus preview
+	// delete preview
 	const removePreview = (index: number) => {
 		setPreview((prev) => prev.filter((_, i) => i !== index));
 		setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
@@ -72,7 +72,7 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 			const file = files[i];
 			const fileExt = file.name.split(".").pop();
 
-			// menggunakan timestamp untuk menghindari nama file yang sama
+			// using timestamps to avoid duplicate file names
 			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 			const filePath = `products/${fileName}`;
 
@@ -102,12 +102,12 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 		try {
 			let imageUrls: string[] = [];
 
-			// ambil foto yang sudah ada (jika ingin mengedit)
+			// if images exist, then add(when edit)
 			if (initialData?.images) {
 				imageUrls = [...initialData.images];
 			}
 
-			// upload foto baru jika ada
+			// upload new images if exist
 			if (selectedFiles.length > 0) {
 				const newUrls = await handleUploadImages(selectedFiles);
 				if (newUrls && newUrls.length > 0) {
@@ -115,9 +115,8 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 				}
 			}
 
-			// jika belum ada foto ssama sekali maka jangan kirim biar ga kena broken image
+			// if images doesnt exist, dont send image to avoid getting a broken image
 			if (imageUrls.length === 0) {
-				// Opsional: Kasih warning atau biarkan kosong jika memang tidak wajib ada foto
 				console.log("Warning: No images uploaded");
 			}
 
@@ -216,7 +215,7 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 
 						{/* preview */}
 						<div className="grid grid-cols-4 gap-2 mb-2">
-							{/* jika sedang edit maka tampilin image yang sudah ada */}
+							{/* if edit product, show images already added */}
 							{initialData?.images?.map((url: string, i: number) => (
 								<div
 									key={i}
@@ -233,7 +232,7 @@ export default function ProductModal({ isOpen, onClose, initialData }: any) {
 								</div>
 							))}
 
-							{/* preview baru */}
+							{/* new preview */}
 							{preview.map((url, i) => (
 								<div
 									key={i}

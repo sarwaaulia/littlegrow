@@ -34,31 +34,30 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // jika user sudah login 
   if (user) {
-    // cek role dari db
-    const { data: dbUser } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    try {
+      const { data: dbUser, error: roleError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-    const role = dbUser?.role
+      const role = dbUser?.role;
 
-    // jika sudah login tapi ingin akses path login/regist
-    if (isAuthPage) {
-      const target = role === 'ADMIN' ? '/admin/dashboard' : '/'
-      return NextResponse.redirect(new URL(target, request.url))
-    }
+      if (isAuthPage) {
+        const target = role === 'ADMIN' ? '/admin/dashboard' : '/';
+        return NextResponse.redirect(new URL(target, request.url));
+      }
 
-    // RBAC: Admin mencoba masuk ke home
-    if (path === '/' && role === 'ADMIN') {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-    }
+      if (path === '/' && role === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      }
 
-    // RBAC jika user ingin akses halaman admin
-    if (path.startsWith('/admin') && role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/', request.url))
+      if (path.startsWith('/admin') && role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    } catch (e) {
+       console.error("Role check failed", e);
     }
   }
 

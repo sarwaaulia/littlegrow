@@ -51,10 +51,10 @@ export default function ProductManagement({ initialProducts }: any) {
 		};
 	}, [router]);
 
-	// filtering dan sorting logic
+	// filtering and sorting logic
 	const filtered = products
 		.filter( (p: any) => {
-			// match search nama/category
+			// match search name/category
 			const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
 				p.category?.name.toLowerCase().includes(search.toLowerCase());
 

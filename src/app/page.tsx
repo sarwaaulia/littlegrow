@@ -95,7 +95,7 @@ export default async function HomePage() {
                     <h2 className="text-3xl font-black text-[#1F2937] mb-8 text-center">Shop By Category</h2>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                         {categories.map((cat) => (
-                            <Link key={cat.slug} href={`/products?category=${cat.slug}`} className="group relative h-80 rounded-2xl overflow-hidden">
+                            <Link key={cat.slug} href={`/products?category=${cat.name}`} className="group relative h-80 rounded-2xl overflow-hidden">
                                 <Image src={cat.img} alt={cat.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
                                     <h3 className="text-white font-bold text-xl">{cat.name}</h3>

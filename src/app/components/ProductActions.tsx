@@ -16,13 +16,13 @@ export default function ProductActions({ product }: any) {
 
     setLoading(true);
     try {
-      // delete image jika ada di db
+      // delete image in database if exist
       if (product.images && product.images.length > 0) {
 
-        // ambil nama file dari URL
+        // get name file from url
         const filePaths = product.images.map((url: string) => {
           const parts = url.split("product-images/");
-          return parts[1]; // ambil path setelah nama bucket
+          return parts[1]; // get path after bucket
         });
 
         const { error: storageError } = await supabaseClient.storage
@@ -75,7 +75,7 @@ export default function ProductActions({ product }: any) {
         )}
       </button>
 
-      {/* modal untuk edit product */}
+      {/* modal for edit product */}
       <ProductModal 
         isOpen={isEditOpen} 
         onClose={() => setIsEditOpen(false)}

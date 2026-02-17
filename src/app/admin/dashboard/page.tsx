@@ -31,7 +31,7 @@ export default async function DashboardPage() {
 				{/* header page */}
 				<header className="mb-6">
 					<h1 className="text-3xl md:text-3xl text-gray-500 font-bold">
-						Dashboard Admin
+						My Dashboard
 					</h1>
 					<p className="mt-1 text-sm md:text-base text-[#6B7280] font-semibold">
 						Manage your products

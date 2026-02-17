@@ -24,13 +24,13 @@ export async function POST(req: Request) {
 				description: body.description,
 				price: parseFloat(body.price),
 				stock: parseInt(body.stock),
-				images: body.images, // array url dari supabase storage
+				images: body.images, // array url from supabase storage
 
 				// category
 				category: {
 					connectOrCreate: {
-						where: { name: body.categoryName }, // mencari kategori berdasarkan nama
-						create: { name: body.categoryName }, // jika kategory belum tersedia, maka buat baru
+						where: { name: body.categoryName }, // by name
+						create: { name: body.categoryName }, // if category doenst exist, add it
 					},
 				},
 			},
