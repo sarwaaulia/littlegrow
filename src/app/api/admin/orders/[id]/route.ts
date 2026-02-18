@@ -5,11 +5,11 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function PATCH(
-	req: Request,
-	{ params }: { params: { id: string } },
+    req: Request, 
+    { params }: { params: Promise<{ id: string }> } 
 ) {
 	try {
-		const { id } = params;
+		const { id } = await params;
 		const { status } = await req.json();
 
 		// =update status in db
