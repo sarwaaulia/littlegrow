@@ -1,5 +1,5 @@
-## 🍼 Little Grow
-Mini Baby StoreLittle Grow is a modern, full-stack E-commerce "Mini Store" specifically designed for baby essentials. This project focuses on a seamless user experience with real-time updates and a robust payment integration.
+## 🍼 Little Grow - Mini Baby Store 
+Little Grow is a modern, full-stack E-commerce "Mini Store" specifically designed for baby essentials. This project focuses on a seamless user experience with real-time updates and a robust payment integration.
 
 ## 🚀 Key Features🛒 
 1. Customer ExperienceAuth System: Secure Signup, Login, and Logout using Supabase Auth.
