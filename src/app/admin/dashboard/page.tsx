@@ -18,10 +18,19 @@ export default async function DashboardPage() {
 
 	if (dbUser?.role !== "ADMIN") redirect("/");
 
-	const products = await prisma.product.findMany({
-		include: { category: true },
-		orderBy: { created_at: "desc" },
-	});
+	const [products, categories] = await Promise.all([
+        prisma.product.findMany({
+            include: { category: true },
+            orderBy: { created_at: "desc" },
+        }),
+        prisma.category.findMany(), // <--- Ambil data ini
+    ]);
+
+	const formattedProducts = products.map(p => ({
+        ...p,
+        price: Number(p.price),
+        created_at: p.created_at.toISOString(),
+    }));
 
 	return (
 		<div className="min-h-screen bg-[#FAF7FF]">
@@ -42,6 +51,7 @@ export default async function DashboardPage() {
 				<section className="bg-white rounded-2xl border border-[#E9D5FF] shadow-sm p-4 md:p-6">
 					<ProductManagement
 						initialProducts={JSON.parse(JSON.stringify(products))}
+						categories={categories}
 					/>
 				</section>
 			</main>

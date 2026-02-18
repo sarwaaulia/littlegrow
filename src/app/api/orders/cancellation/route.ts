@@ -21,7 +21,7 @@ export async function PATCH(req: Request){
 
         // trigger email to admin
         await resend.emails.send({
-            from: `LittleGrow test`,
+            from: `LittleGrow <onboarding@resend.dev>`,
             to: `sarwaaulia01@gmail.com`,
             subject: `Order canceled - ${orderCanceled.user.name}`,
             html: `<p>Customer <b>${orderCanceled.user?.name}</b> just canceled order ID: ${orderId}.</p>`

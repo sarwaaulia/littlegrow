@@ -6,15 +6,16 @@ import ProductGrid from "./GridProduct";
 import ProductModal from "./ProductModal";
 import { useRouter } from "next/navigation";
 
-export default function ProductManagement({ initialProducts }: any) {
+export default function ProductManagement({
+	initialProducts,
+	categories,
+}: any) {
 	const [products, setProducts] = useState(initialProducts);
 	const [search, setSearch] = useState("");
 	const [sortBy, setSortBy] = useState("latest");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedCategory, setSelectedCategory] = useState("all");
 	const router = useRouter();
-
-	const categories = ["Clothing", "Footwear", "Accessories", "Toys"];
 
 	// setup realtime subscription
 	useEffect(() => {
@@ -35,8 +36,16 @@ export default function ProductManagement({ initialProducts }: any) {
 							),
 						);
 					} else if (payload.eventType === "INSERT") {
-						setProducts((prev: any) => [payload.new, ...prev]);
+						const categoryInfo = categories.find(
+							(c: any) => c.id === payload.new.categoryId,
+						);
 
+						const newProductWithCategory = {
+							...payload.new,
+							category: categoryInfo ? { name: categoryInfo.name } : null,
+						};
+
+						setProducts((prev: any) => [newProductWithCategory, ...prev]);
 					} else if (payload.eventType === "DELETE") {
 						setProducts((prev: any) =>
 							prev.filter((p: any) => p.id !== payload.old.id),
@@ -53,12 +62,14 @@ export default function ProductManagement({ initialProducts }: any) {
 
 	// filtering and sorting logic
 	const filtered = products
-		.filter( (p: any) => {
+		.filter((p: any) => {
 			// match search name/category
-			const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
+			const matchesSearch =
+				p.name.toLowerCase().includes(search.toLowerCase()) ||
 				p.category?.name.toLowerCase().includes(search.toLowerCase());
 
-			const matchesCategory = selectedCategory === "all" || p.category?.name === selectedCategory;
+			const matchesCategory =
+				selectedCategory === "all" || p.category?.name === selectedCategory;
 			return matchesSearch && matchesCategory;
 		})
 
@@ -74,16 +85,14 @@ export default function ProductManagement({ initialProducts }: any) {
 
 	return (
 		<div className="space-y-6">
-
 			{/* search & action Bar */}
 			<div className=" flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-				
 				{/* Search + Sort */}
 				<div className="flex gap-3 w-full md:w-auto">
-					<input 
-          type="text" 
-          placeholder="Search products..." 
-          className="
+					<input
+						type="text"
+						placeholder="Search products..."
+						className="
           w-full md:w-64
           bg-[#FFFF] border border-[#6875F5]
           text-[#1F2937]
@@ -98,52 +107,62 @@ export default function ProductManagement({ initialProducts }: any) {
 					/>
 
 					{/* dropdown category */}
-					<select className=" w-44 bg-[#FFFF] border border-[#6875F5] rounded-xl px-3 py-2 text-sm font-semibold text-[#1F2937] outline-none"
-						onChange={(e) => setSelectedCategory(e.target.value)} value={selectedCategory}>
+					<select
+						className=" w-44 bg-[#FFFF] border border-[#6875F5] rounded-xl px-3 py-2 text-sm font-semibold text-[#1F2937] outline-none"
+						onChange={(e) => setSelectedCategory(e.target.value)}
+						value={selectedCategory}
+					>
 						<option value="all">All Categories</option>
-						{categories.map((category) => (
-							<option key={category} value={category}>
-								{category}
+						{categories?.map((cat: any) => (
+							<option key={cat.id} value={cat.name}>
+								{cat.name}
 							</option>
 						))}
 					</select>
 
-					<select 
-                        className="bg-[#FFFF] border border-[#6875F5] rounded-xl px-3 py-2 text-sm font-semibold text-[#1F2937] outline-none cursor-pointer"
-                        onChange={(e) => setSortBy(e.target.value)}
-                    >
-                        <option value="latest">Newest</option>
-                        <option value="price-high">Highest Price</option>
-                        <option value="price-low">Lowest Price</option>
-                        <option value="stock-low">Low Stock</option>
-                    </select>
+					<select
+						className="bg-[#FFFF] border border-[#6875F5] rounded-xl px-3 py-2 text-sm font-semibold text-[#1F2937] outline-none cursor-pointer"
+						onChange={(e) => setSortBy(e.target.value)}
+					>
+						<option value="latest">Newest</option>
+						<option value="price-high">Highest Price</option>
+						<option value="price-low">Lowest Price</option>
+						<option value="stock-low">Low Stock</option>
+					</select>
 				</div>
 
 				{/* action add button */}
 				<button
 					onClick={() => setIsModalOpen(true)}
-					className=" rounded-lg bg-[#6875F5] hover:bg-[#5A67D8] text-white px-5 py-2 rounded-xl text-sm font-bold transition active:scale-95 w-full md:w-auto">
+					className=" rounded-lg bg-[#6875F5] hover:bg-[#5A67D8] text-white px-5 py-2 rounded-xl text-sm font-bold transition active:scale-95 w-full md:w-auto"
+				>
 					+ Add Product
 				</button>
 			</div>
 
-		{filtered.length > 0 ? (
-			<ProductGrid products={filtered} />
-		): (
-			<div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 font-medium text-lg italic">
-                        "{search}" not found
-                    </p>
-                    <button 
-                        onClick={() => {setSearch(""); setSelectedCategory("all")}}
-                        className="mt-2 text-[#6875F5] text-sm font-semibold underline"
-                    >
-                        Clear filters
-                    </button>
-                </div>
-		)}	
+			{filtered.length > 0 ? (
+				<ProductGrid products={filtered} />
+			) : (
+				<div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+					<p className="text-gray-500 font-medium text-lg italic">
+						"{search}" not found
+					</p>
+					<button
+						onClick={() => {
+							setSearch("");
+							setSelectedCategory("all");
+						}}
+						className="mt-2 text-[#6875F5] text-sm font-semibold underline"
+					>
+						Clear filters
+					</button>
+				</div>
+			)}
 
-			<ProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+			<ProductModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+			/>
 		</div>
 	);
 }
